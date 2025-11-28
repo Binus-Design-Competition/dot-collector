@@ -11,7 +11,7 @@ import { Moon, Sun } from 'lucide-react';
 
 function AdminRoute() {
     const { currentUser, userDoc } = useAuth();
-    const [dark Mode, setDarkMode] = useState(() => {
+    const [darkMode, setDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('darkMode') === 'true' ||
                 window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -20,7 +20,7 @@ function AdminRoute() {
     });
 
     const sessionId = userDoc?.sessionId;
-    const { session, activeUsers } = useSession(sessionId);
+    const { session } = useSession(sessionId);
 
     useEffect(() => {
         if (darkMode) {
@@ -33,15 +33,12 @@ function AdminRoute() {
     }, [darkMode]);
 
     const toggleDarkMode = () => setDarkMode(!darkMode);
-
-    // Check if user is authenticated admin
     const isAdmin = currentUser && userDoc?.role === 'admin';
 
     if (!isAdmin) {
         return <AdminLogin onLoginSuccess={() => { }} />;
     }
 
-    // If admin is logged in but has no session, show create session form
     if (!sessionId) {
         return <CreateSessionForm onSessionCreated={() => { }} />;
     }
@@ -53,17 +50,9 @@ function AdminRoute() {
                 className="fixed bottom-4 right-4 z-50 p-3 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:shadow-xl transition-shadow border border-gray-200 dark:border-slate-700"
                 aria-label="Toggle dark mode"
             >
-                {darkMode ? (
-                    <Sun className="text-yellow-500" size={24} />
-                ) : (
-                    <Moon className="text-slate-700" size={24} />
-                )}
+                {darkMode ? <Sun className="text-yellow-500" size={24} /> : <Moon className="text-slate-700" size={24} />}
             </button>
-
-            <TeacherDashboard
-                sessionId={sessionId}
-                initialSession={session}
-            />
+            <TeacherDashboard sessionId={sessionId} initialSession={session} />
         </div>
     );
 }
@@ -92,8 +81,6 @@ function UserRoute() {
     }, [darkMode]);
 
     const toggleDarkMode = () => setDarkMode(!darkMode);
-
-    // Check if user is authenticated and has a session
     const isUser = currentUser && userDoc?.role === 'user' && sessionId;
 
     if (!isUser) {
@@ -107,18 +94,9 @@ function UserRoute() {
                 className="fixed bottom-4 right-4 z-50 p-3 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:shadow-xl transition-shadow border border-gray-200 dark:border-slate-700"
                 aria-label="Toggle dark mode"
             >
-                {darkMode ? (
-                    <Sun className="text-yellow-500" size={24} />
-                ) : (
-                    <Moon className="text-slate-700" size={24} />
-                )}
+                {darkMode ? <Sun className="text-yellow-500" size={24} /> : <Moon className="text-slate-700" size={24} />}
             </button>
-
-            <StudentInterface
-                sessionId={sessionId}
-                session={session}
-                activeUsers={activeUsers}
-            />
+            <StudentInterface sessionId={sessionId} session={session} activeUsers={activeUsers} />
         </div>
     );
 }
