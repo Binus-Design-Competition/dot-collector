@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { useSession } from './hooks/useSession';
 import { AdminLogin } from './components/Auth/AdminLogin';
+import { CreateSessionForm } from './components/Auth/CreateSessionForm';
 import { UserJoin } from './components/Auth/UserJoin';
 import { TeacherDashboard } from './components/Teacher/TeacherDashboard';
 import { StudentInterface } from './components/Student/StudentInterface';
@@ -10,7 +11,7 @@ import { Moon, Sun } from 'lucide-react';
 
 function AdminRoute() {
     const { currentUser, userDoc } = useAuth();
-    const [darkMode, setDarkMode] = useState(() => {
+    const [dark Mode, setDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('darkMode') === 'true' ||
                 window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -38,6 +39,11 @@ function AdminRoute() {
 
     if (!isAdmin) {
         return <AdminLogin onLoginSuccess={() => { }} />;
+    }
+
+    // If admin is logged in but has no session, show create session form
+    if (!sessionId) {
+        return <CreateSessionForm onSessionCreated={() => { }} />;
     }
 
     return (
