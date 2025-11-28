@@ -63,6 +63,51 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
+    // Auto-logout logic
+    useEffect(() => {
+        const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+        const STORAGE_KEY = 'admin_last_active';
+
+        const checkAutoLogout = async () => {
+            const lastActive = localStorage.getItem(STORAGE_KEY);
+            // Only check if we have a user and they are an admin
+            if (currentUser && userDoc?.role === 'admin' && lastActive) {
+                const timeSinceLastActive = Date.now() - parseInt(lastActive);
+                if (timeSinceLastActive > TIMEOUT_MS) {
+                    console.log('Auto-logout triggered due to inactivity');
+                    await logout();
+                    localStorage.removeItem(STORAGE_KEY);
+                    window.location.reload();
+                }
+            }
+        };
+
+        const updateLastActive = () => {
+            if (currentUser && userDoc?.role === 'admin') {
+                localStorage.setItem(STORAGE_KEY, Date.now().toString());
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                updateLastActive();
+            } else {
+                checkAutoLogout();
+            }
+        };
+
+        // Check on mount/re-connect
+        checkAutoLogout();
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('beforeunload', updateLastActive);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeunload', updateLastActive);
+        };
+    }, [currentUser, userDoc]);
+
     const login = async (name, sessionId = null) => {
         try {
             // This is now for admin - email/password auth
@@ -119,13 +164,34 @@ export const AuthProvider = ({ children }) => {
         await auth.signOut();
     };
 
+    const updateDisplayName = async (newName) => {
+        if (!currentUser) return;
+        try {
+            await updateProfile(currentUser, { displayName: newName });
+
+            // Update Firestore if user doc exists
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userDocRef, { name: newName });
+
+            // Update local state
+            setUserDoc(prev => ({ ...prev, name: newName }));
+            return true;
+        } catch (error) {
+            console.error('Error updating display name:', error);
+            throw error;
+        }
+    };
+
     const value = {
         currentUser,
         userDoc,
         loading,
         login,
         loginAnonymous,
-        logout
+        login,
+        loginAnonymous,
+        logout,
+        updateDisplayName
     };
 
     // Show loading indicator while initializing

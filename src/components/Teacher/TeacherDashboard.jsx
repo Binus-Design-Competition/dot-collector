@@ -13,17 +13,21 @@ import {
     LogOut,
     ChevronDown,
     Eye,
-    EyeOff
+    EyeOff,
+    Settings,
+    X
 } from 'lucide-react';
 
 export const TeacherDashboard = ({ sessionId, initialSession }) => {
-    const { logout, userDoc } = useAuth();
+    const { logout, userDoc, updateDisplayName } = useAuth();
     const { session, activeUsers, updateActiveCategory, startSession, endSession, updateSession } = useSession(sessionId);
     const { reviews } = useReviews(sessionId);
 
     const [selectedCategory, setSelectedCategory] = useState(session?.activeCategory || EVALUATION_CONFIG[0].category);
     const [selectedTarget, setSelectedTarget] = useState('');
     const [exporting, setExporting] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [editingName, setEditingName] = useState('');
 
     const currentSession = session || initialSession;
 
@@ -74,6 +78,17 @@ export const TeacherDashboard = ({ sessionId, initialSession }) => {
         }
     };
 
+    const handleUpdateName = async (e) => {
+        e.preventDefault();
+        try {
+            await updateDisplayName(editingName);
+            setShowSettings(false);
+            alert('Name updated successfully');
+        } catch (error) {
+            alert('Failed to update name');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
             {/* Header */}
@@ -86,13 +101,25 @@ export const TeacherDashboard = ({ sessionId, initialSession }) => {
                                 Session Code: <span className="font-mono text-xl font-bold">{sessionId}</span>
                             </p>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg flex items-center gap-2"
-                        >
-                            <LogOut size={18} />
-                            Exit
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    setEditingName(userDoc?.name || '');
+                                    setShowSettings(true);
+                                }}
+                                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg flex items-center gap-2"
+                            >
+                                <Settings size={18} />
+                                Settings
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg flex items-center gap-2"
+                            >
+                                <LogOut size={18} />
+                                Exit
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -290,6 +317,50 @@ export const TeacherDashboard = ({ sessionId, initialSession }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Settings Modal */}
+            {showSettings && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h3>
+                            <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateName} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Display Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                                    placeholder="Enter your name"
+                                    required
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowSettings(false)}
+                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
