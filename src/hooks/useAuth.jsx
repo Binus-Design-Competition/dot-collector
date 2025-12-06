@@ -188,8 +188,6 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         loginAnonymous,
-        login,
-        loginAnonymous,
         logout,
         updateDisplayName
     };
