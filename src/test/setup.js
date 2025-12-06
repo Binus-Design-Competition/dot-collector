@@ -16,6 +16,7 @@ vi.mock('firebase/auth', () => ({
     signInAnonymously: vi.fn(),
     updateProfile: vi.fn(),
   })),
+  connectAuthEmulator: vi.fn(),
   GoogleAuthProvider: vi.fn(),
   signInWithPopup: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
+  connectFirestoreEmulator: vi.fn(),
   collection: vi.fn(),
   addDoc: vi.fn(),
   getDocs: vi.fn(),
