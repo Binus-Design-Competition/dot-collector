@@ -3,7 +3,8 @@
 A real-time peer feedback tool with comprehensive heatmap visualization. Perfect for classroom presentations, team meetings, and group evaluations.
 
 ![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react)
-![Firebase](https://img.shields.io/badge/Firebase-9.x-FFA611?logo=firebase)
+![Firebase](https://img.shields.io/badge/Firebase-10.x-FFA611?logo=firebase)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?logo=tailwind-css)
 
 ## ✨ Features
 
@@ -85,7 +86,7 @@ The app will be available at `http://localhost:3000`
 - Opening Hook
 - Closing Impact
 
-##🎨 Score Legend
+## 🎨 Score Legend
 
 Ratings from 1-6 with color coding:
 - **6** - Excellent (Dark Green)
@@ -103,6 +104,23 @@ Ratings from 1-6 with color coding:
 - **Routing**: React Router
 - **PDF**: jsPDF + html2canvas
 - **Icons**: Lucide React
+
+## 📂 Project Structure
+
+```
+src/
+├── components/      # React components
+│   ├── Auth/       # Authentication components
+│   ├── Grid/       # Feedback grid visualization
+│   ├── Student/    # Participant interfaces
+│   └── Teacher/    # Host/Admin interfaces
+├── config/         # Configuration files
+├── hooks/          # Custom React hooks
+├── utils/          # Utility functions
+├── App.jsx         # Main application component
+├── firebase.js     # Firebase initialization
+└── main.jsx        # Entry point
+```
 
 ## 📱 Mobile Support
 
