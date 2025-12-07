@@ -5,11 +5,13 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { LogIn, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getFriendlyErrorMessage } from '../../utils/errorHandler';
+import { useNavigate } from 'react-router-dom';
 
 export const AdminLogin = ({ onLoginSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -29,7 +31,9 @@ export const AdminLogin = ({ onLoginSuccess }) => {
                 lastSeen: serverTimestamp()
             }, { merge: true });
 
-            onLoginSuccess(user);
+            toast.success('Logged in successfully');
+            if (onLoginSuccess) onLoginSuccess(user);
+            navigate('/admin/dashboard');
         } catch (err) {
             console.error('Login error:', err);
             toast.error(getFriendlyErrorMessage(err));
