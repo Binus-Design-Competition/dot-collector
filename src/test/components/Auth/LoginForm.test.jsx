@@ -3,9 +3,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LoginForm } from '../../../components/Auth/LoginForm';
 import { useAuth } from '../../../hooks/useAuth';
 import { getDoc, setDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
 vi.mock('../../../hooks/useAuth');
 vi.mock('../../../firebase');
+vi.mock('react-hot-toast');
 
 describe('LoginForm', () => {
     const mockLogin = vi.fn();
@@ -26,10 +28,11 @@ describe('LoginForm', () => {
         expect(screen.getByText('Create New Session')).toBeInTheDocument();
     });
 
-    it('disables join button when name is empty', () => {
+    it('shows error when clicking join with empty name', () => {
         render(<LoginForm onSessionCreated={mockOnSessionCreated} />);
         const joinButton = screen.getByText('Join Session').closest('button');
-        expect(joinButton).toBeDisabled();
+        fireEvent.click(joinButton);
+        expect(toast.error).toHaveBeenCalledWith('Please enter your name');
     });
 
     it('switches to create session mode', () => {
@@ -82,7 +85,7 @@ describe('LoginForm', () => {
         fireEvent.click(screen.getByText('Join Session'));
 
         await waitFor(() => {
-            expect(screen.getByText('Session not found. Please check the code.')).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('We couldn\'t find that session'));
         });
     });
 });

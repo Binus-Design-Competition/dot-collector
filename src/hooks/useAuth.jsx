@@ -6,6 +6,8 @@ import {
     onAuthStateChanged
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../utils/errorHandler';
 
 const AuthContext = createContext(null);
 
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
                     }
                 } catch (error) {
                     console.error('Error fetching user document:', error);
+                    // Don't show toast for background fetch errors to avoid UI spam, just log
                 }
             } else {
                 setUserDoc(null);
@@ -53,6 +56,7 @@ export const AuthProvider = ({ children }) => {
         }, (error) => {
             // Error callback
             console.error('Firebase auth error:', error);
+            toast.error('Authentication error. Please refresh the page.');
             clearTimeout(timeout);
             setLoading(false);
         });
@@ -159,6 +163,7 @@ export const AuthProvider = ({ children }) => {
                 });
             } catch (err) {
                 console.error('Logout update error:', err);
+                // Non-critical error, logging is enough
             }
         }
         await auth.signOut();
@@ -175,9 +180,11 @@ export const AuthProvider = ({ children }) => {
 
             // Update local state
             setUserDoc(prev => ({ ...prev, name: newName }));
+            toast.success('Name updated successfully');
             return true;
         } catch (error) {
             console.error('Error updating display name:', error);
+            toast.error(getFriendlyErrorMessage(error));
             throw error;
         }
     };

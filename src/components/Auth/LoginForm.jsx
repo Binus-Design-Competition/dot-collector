@@ -3,13 +3,14 @@ import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { LogIn, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../../utils/errorHandler';
 
 export const LoginForm = ({ onSessionCreated }) => {
     const [name, setName] = useState('');
     const [sessionCode, setSessionCode] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
     const { login } = useAuth();
 
     const generateSessionCode = () => {
@@ -19,12 +20,11 @@ export const LoginForm = ({ onSessionCreated }) => {
     const handleCreateSession = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
-            setError('Please enter your name');
+            toast.error('Please enter your name');
             return;
         }
 
         setLoading(true);
-        setError('');
 
         try {
             // Login first
@@ -54,7 +54,7 @@ export const LoginForm = ({ onSessionCreated }) => {
             onSessionCreated(newSessionCode, true);
         } catch (err) {
             console.error('Error creating session:', err);
-            setError('Failed to create session. Please try again.');
+            toast.error(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -63,16 +63,15 @@ export const LoginForm = ({ onSessionCreated }) => {
     const handleJoinSession = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
-            setError('Please enter your name');
+            toast.error('Please enter your name');
             return;
         }
         if (!sessionCode.trim()) {
-            setError('Please enter a session code');
+            toast.error('Please enter a session code');
             return;
         }
 
         setLoading(true);
-        setError('');
 
         try {
             // Check if session exists
@@ -80,7 +79,7 @@ export const LoginForm = ({ onSessionCreated }) => {
             const sessionSnap = await getDoc(sessionRef);
 
             if (!sessionSnap.exists()) {
-                setError('Session not found. Please check the code.');
+                toast.error(getFriendlyErrorMessage('Session not found'));
                 setLoading(false);
                 return;
             }
@@ -99,7 +98,7 @@ export const LoginForm = ({ onSessionCreated }) => {
             onSessionCreated(sessionCode.toUpperCase(), false);
         } catch (err) {
             console.error('Error joining session:', err);
-            setError('Failed to join session. Please try again.');
+            toast.error(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -132,11 +131,6 @@ export const LoginForm = ({ onSessionCreated }) => {
                         />
                     </div>
 
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
 
                     <div className="space-y-4">
                         {!isCreating ? (
@@ -158,7 +152,7 @@ export const LoginForm = ({ onSessionCreated }) => {
 
                                 <button
                                     onClick={handleJoinSession}
-                                    disabled={loading || !name.trim() || !sessionCode.trim()}
+                                    disabled={loading}
                                     className="w-full btn-primary flex items-center justify-center gap-2"
                                 >
                                     <LogIn size={20} />
@@ -187,7 +181,7 @@ export const LoginForm = ({ onSessionCreated }) => {
                             <>
                                 <button
                                     onClick={handleCreateSession}
-                                    disabled={loading || !name.trim()}
+                                    disabled={loading}
                                     className="w-full btn-primary flex items-center justify-center gap-2"
                                 >
                                     <Plus size={20} />

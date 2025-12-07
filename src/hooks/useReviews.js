@@ -11,6 +11,8 @@ import {
     serverTimestamp,
     getDocs
 } from 'firebase/firestore';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../utils/errorHandler';
 
 export const useReviews = (sessionId, filters = {}) => {
     const [reviews, setReviews] = useState([]);
@@ -63,6 +65,7 @@ export const useReviews = (sessionId, filters = {}) => {
             return docRef.id;
         } catch (error) {
             console.error('Error creating review:', error);
+            toast.error(getFriendlyErrorMessage(error));
             throw error;
         }
     };
@@ -76,6 +79,7 @@ export const useReviews = (sessionId, filters = {}) => {
             });
         } catch (error) {
             console.error('Error updating review:', error);
+            toast.error(getFriendlyErrorMessage(error));
             throw error;
         }
     };
