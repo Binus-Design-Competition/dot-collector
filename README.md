@@ -56,6 +56,35 @@ The app will be available at `http://localhost:3000`
 2. Add your Firebase credentials to `.env`
 3. Restart the dev server
 
+### 🔥 Firebase Emulators
+
+For local development without connecting to the production database, you can use the Firebase Emulator Suite.
+
+1. Start the emulators:
+   ```bash
+   npm run emulators
+   ```
+2. In a separate terminal, start the dev server:
+   ```bash
+   npm run dev
+   ```
+
+The app will automatically connect to the local emulators (Auth: 9099, Firestore: 8080) when running on `localhost`.
+
+### 🧪 Testing
+
+This project uses **Vitest** for unit/integration testing and **Playwright** for end-to-end testing.
+
+**Run Unit & Integration Tests:**
+```bash
+npm test
+```
+
+**Run End-to-End Tests:**
+```bash
+npm run test:e2e
+```
+
 ## 📊 Evaluation Categories
 
 ### 1. Delivery Dynamics
@@ -102,6 +131,7 @@ Ratings from 1-6 with color coding:
 - **Styling**: Tailwind CSS
 - **Backend**: Firebase (Firestore + Authentication)
 - **Routing**: React Router
+- **Testing**: Vitest, React Testing Library, Playwright
 - **PDF**: jsPDF + html2canvas
 - **Icons**: Lucide React
 
