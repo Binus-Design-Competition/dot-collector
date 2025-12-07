@@ -5,12 +5,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import { LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getFriendlyErrorMessage } from '../../utils/errorHandler';
+import { useNavigate } from 'react-router-dom';
 
 export const UserJoin = ({ onJoinSuccess }) => {
     const [sessionCode, setSessionCode] = useState('');
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const { loginAnonymous } = useAuth();
+    const navigate = useNavigate();
 
     const handleJoin = async (e) => {
         e.preventDefault();
@@ -39,7 +41,8 @@ export const UserJoin = ({ onJoinSuccess }) => {
 
             // Join as anonymous user
             await loginAnonymous(name, sessionCode.toUpperCase());
-            onJoinSuccess(sessionCode.toUpperCase());
+            if (onJoinSuccess) onJoinSuccess(sessionCode.toUpperCase());
+            navigate('/room');
         } catch (err) {
             console.error('Join error:', err);
             toast.error(getFriendlyErrorMessage(err));
@@ -103,7 +106,7 @@ export const UserJoin = ({ onJoinSuccess }) => {
 
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Session host? <a href="/admin" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Admin Login →</a>
+                            Session host? <a href="/admin/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Admin Login →</a>
                         </p>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { auth, db } from '../firebase';
 import {
     signInAnonymously,
@@ -24,6 +24,26 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [userDoc, setUserDoc] = useState(null);
 
+    // Logout function definition (hoisted for use in effects)
+    const logout = async () => {
+        if (currentUser) {
+            // Update user status before logging out
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            try {
+                await updateDoc(userDocRef, {
+                    isOnline: false,
+                    lastSeen: serverTimestamp()
+                });
+            } catch (err) {
+                console.error('Logout update error:', err);
+                // Non-critical error, logging is enough
+            }
+        }
+        await auth.signOut();
+        // Clear local storage for inactivity
+        localStorage.removeItem('last_active_timestamp');
+    };
+
     useEffect(() => {
         // Set a timeout to force loading to false if Firebase doesn't respond
         const timeout = setTimeout(() => {
@@ -43,6 +63,8 @@ export const AuthProvider = ({ children }) => {
 
                     if (userSnapshot.exists()) {
                         setUserDoc({ id: user.uid, ...userSnapshot.data() });
+                        // Set initial activity timestamp on successful load
+                        localStorage.setItem('last_active_timestamp', Date.now().toString());
                     }
                 } catch (error) {
                     console.error('Error fetching user document:', error);
@@ -67,50 +89,56 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
-    // Auto-logout logic
+    // Comprehensive Auto-logout logic (30 minutes)
     useEffect(() => {
-        const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-        const STORAGE_KEY = 'admin_last_active';
+        if (!currentUser) return;
 
-        const checkAutoLogout = async () => {
-            const lastActive = localStorage.getItem(STORAGE_KEY);
-            // Only check if we have a user and they are an admin
-            if (currentUser && userDoc?.role === 'admin' && lastActive) {
-                const timeSinceLastActive = Date.now() - parseInt(lastActive);
-                if (timeSinceLastActive > TIMEOUT_MS) {
-                    console.log('Auto-logout triggered due to inactivity');
-                    await logout();
-                    localStorage.removeItem(STORAGE_KEY);
-                    window.location.reload();
-                }
+        const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+        const STORAGE_KEY = 'last_active_timestamp';
+        const CHECK_INTERVAL = 60 * 1000; // Check every 1 minute
+
+        const updateActivity = () => {
+            // Throttle updates to avoid excessive storage writes
+            const now = Date.now();
+            const lastStored = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+
+            // Only update if more than 1 minute has passed since last update
+            if (now - lastStored > 60000) {
+                localStorage.setItem(STORAGE_KEY, now.toString());
             }
         };
 
-        const updateLastActive = () => {
-            if (currentUser && userDoc?.role === 'admin') {
-                localStorage.setItem(STORAGE_KEY, Date.now().toString());
+        const checkInactivity = async () => {
+            const lastActive = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+            if (lastActive > 0 && Date.now() - lastActive > TIMEOUT_MS) {
+                console.log('Auto-logout triggered due to inactivity');
+                toast('Session expired due to inactivity');
+                await logout();
+                window.location.reload(); // Refresh to clear any stale state
             }
         };
 
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                updateLastActive();
-            } else {
-                checkAutoLogout();
-            }
-        };
+        // Events to track activity
+        const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
 
-        // Check on mount/re-connect
-        checkAutoLogout();
+        // Add event listeners
+        events.forEach(event => {
+            window.addEventListener(event, updateActivity);
+        });
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('beforeunload', updateLastActive);
+        // Start periodic check
+        const intervalId = setInterval(checkInactivity, CHECK_INTERVAL);
+
+        // Initial check
+        checkInactivity();
 
         return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('beforeunload', updateLastActive);
+            events.forEach(event => {
+                window.removeEventListener(event, updateActivity);
+            });
+            clearInterval(intervalId);
         };
-    }, [currentUser, userDoc]);
+    }, [currentUser]); // Re-run when user logs in/out
 
     const login = async (name, sessionId = null) => {
         try {
@@ -145,28 +173,14 @@ export const AuthProvider = ({ children }) => {
             await setDoc(userDocRef, userData, { merge: true });
             setUserDoc({ id: user.uid, ...userData });
 
+            // Initialize activity timer
+            localStorage.setItem('last_active_timestamp', Date.now().toString());
+
             return user;
         } catch (error) {
             console.error('Anonymous login error:', error);
             throw error;
         }
-    };
-
-    const logout = async () => {
-        if (currentUser) {
-            // Update user status before logging out
-            const userDocRef = doc(db, 'users', currentUser.uid);
-            try {
-                await updateDoc(userDocRef, {
-                    isOnline: false,
-                    lastSeen: serverTimestamp()
-                });
-            } catch (err) {
-                console.error('Logout update error:', err);
-                // Non-critical error, logging is enough
-            }
-        }
-        await auth.signOut();
     };
 
     const updateDisplayName = async (newName) => {
