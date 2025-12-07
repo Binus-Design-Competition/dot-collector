@@ -4,6 +4,8 @@ import { useReviews } from '../../hooks/useReviews';
 import { EVALUATION_CONFIG } from '../../config/evaluationConfig';
 import { SegmentedControl } from './SegmentedControl';
 import { Save, Edit2, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../../utils/errorHandler';
 
 export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
     const { userDoc } = useAuth();
@@ -15,7 +17,6 @@ export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
     const [myReviews, setMyReviews] = useState([]);
     const [editingReview, setEditingReview] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
 
     const currentCategory = EVALUATION_CONFIG.find(c => c.category === selectedCategory);
     const availableTargets = activeUsers.filter(u => u.id !== userDoc?.id);
@@ -58,7 +59,6 @@ export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
 
     const handleRatingChange = (metricId, score) => {
         setRatings(prev => ({ ...prev, [metricId]: score }));
-        setSuccessMessage('');
     };
 
     const handleSubmit = async (e) => {
@@ -67,7 +67,7 @@ export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
         // Validate all metrics are rated
         const allRated = currentCategory.metrics.every(m => ratings[m.id] && ratings[m.id] > 0);
         if (!allRated) {
-            alert('Please rate all metrics before submitting');
+            toast.error('Please rate all metrics before submitting');
             return;
         }
 
@@ -86,10 +86,10 @@ export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
 
             if (editingReview) {
                 await updateReview(editingReview.id, reviewData);
-                setSuccessMessage('Review updated successfully!');
+                toast.success('Review updated successfully!');
             } else {
                 await createReview(reviewData);
-                setSuccessMessage('Review submitted successfully!');
+                toast.success('Review submitted successfully!');
             }
 
             // Reload reviews
@@ -99,10 +99,9 @@ export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
             setRatings({});
             setSelectedTarget('');
 
-            setTimeout(() => setSuccessMessage(''), 3000);
         } catch (error) {
             console.error('Error submitting review:', error);
-            alert('Failed to submit review. Please try again.');
+            toast.error(getFriendlyErrorMessage(error));
         } finally {
             setSaving(false);
         }
@@ -119,13 +118,6 @@ export const VoteTab = ({ sessionId, activeUsers, sessionStatus }) => {
 
     return (
         <div className="space-y-6">
-            {/* Success Message */}
-            {successMessage && (
-                <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg">
-                    {successMessage}
-                </div>
-            )}
-
             {/* My Submitted Reviews */}
             {myReviews.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow">

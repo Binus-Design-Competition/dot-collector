@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import toast from 'react-hot-toast';
 
 export const exportToPDF = async (elementId = 'heatmap-container', filename = 'feedback-report.pdf') => {
     try {
@@ -8,6 +9,8 @@ export const exportToPDF = async (elementId = 'heatmap-container', filename = 'f
         if (!element) {
             throw new Error('Element not found');
         }
+
+        const loadingToast = toast.loading('Generating PDF...');
 
         // Capture the element as canvas
         const canvas = await html2canvas(element, {
@@ -39,9 +42,13 @@ export const exportToPDF = async (elementId = 'heatmap-container', filename = 'f
         // Save PDF
         pdf.save(filename);
 
+        toast.dismiss(loadingToast);
+        toast.success('PDF exported successfully!');
+
         return true;
     } catch (error) {
         console.error('Error exporting PDF:', error);
+        toast.error('Failed to export PDF. Please try again.');
         throw error;
     }
 };

@@ -8,6 +8,7 @@ import { UserJoin } from './components/Auth/UserJoin';
 import { TeacherDashboard } from './components/Teacher/TeacherDashboard';
 import { StudentInterface } from './components/Student/StudentInterface';
 import { Moon, Sun } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 
 function AdminRoute() {
     const { currentUser, userDoc } = useAuth();
@@ -105,6 +106,7 @@ function App() {
     return (
         <AuthProvider>
             <BrowserRouter>
+                <Toaster position="top-right" />
                 <Routes>
                     <Route path="/" element={<UserRoute />} />
                     <Route path="/admin" element={<AdminRoute />} />

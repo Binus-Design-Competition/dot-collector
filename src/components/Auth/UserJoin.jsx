@@ -3,28 +3,28 @@ import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { LogIn } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../../utils/errorHandler';
 
 export const UserJoin = ({ onJoinSuccess }) => {
     const [sessionCode, setSessionCode] = useState('');
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
     const { loginAnonymous } = useAuth();
 
     const handleJoin = async (e) => {
         e.preventDefault();
 
         if (!name.trim()) {
-            setError('Please enter your name');
+            toast.error('Please enter your name');
             return;
         }
         if (!sessionCode.trim()) {
-            setError('Please enter a session code');
+            toast.error('Please enter a session code');
             return;
         }
 
         setLoading(true);
-        setError('');
 
         try {
             // Check if session exists
@@ -32,7 +32,7 @@ export const UserJoin = ({ onJoinSuccess }) => {
             const sessionSnap = await getDoc(sessionRef);
 
             if (!sessionSnap.exists()) {
-                setError('Session not found. Please check the code.');
+                toast.error(getFriendlyErrorMessage('Session not found'));
                 setLoading(false);
                 return;
             }
@@ -42,7 +42,7 @@ export const UserJoin = ({ onJoinSuccess }) => {
             onJoinSuccess(sessionCode.toUpperCase());
         } catch (err) {
             console.error('Join error:', err);
-            setError('Failed to join session. Please try again.');
+            toast.error(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -91,15 +91,9 @@ export const UserJoin = ({ onJoinSuccess }) => {
                             />
                         </div>
 
-                        {error && (
-                            <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
-                                {error}
-                            </div>
-                        )}
-
                         <button
                             type="submit"
-                            disabled={loading || !name.trim() || !sessionCode.trim()}
+                            disabled={loading}
                             className="w-full btn-primary flex items-center justify-center gap-2"
                         >
                             <LogIn size={20} />

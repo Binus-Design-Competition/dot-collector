@@ -4,11 +4,12 @@ import { doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
 import { Plus, Loader2 } from 'lucide-react';
 import { EVALUATION_CONFIG } from '../../config/evaluationConfig';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../../utils/errorHandler';
 
 export const CreateSessionForm = ({ onSessionCreated }) => {
     const { currentUser } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     const generateSessionId = () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
@@ -21,7 +22,6 @@ export const CreateSessionForm = ({ onSessionCreated }) => {
 
     const handleCreateSession = async () => {
         setLoading(true);
-        setError('');
 
         try {
             const sessionId = generateSessionId();
@@ -48,7 +48,7 @@ export const CreateSessionForm = ({ onSessionCreated }) => {
             onSessionCreated(sessionId);
         } catch (err) {
             console.error('Session creation error:', err);
-            setError('Failed to create session. Please try again.');
+            toast.error(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -81,11 +81,6 @@ export const CreateSessionForm = ({ onSessionCreated }) => {
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
 
                     <button
                         onClick={handleCreateSession}

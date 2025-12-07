@@ -3,16 +3,16 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { LogIn, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '../../utils/errorHandler';
 
 export const AdminLogin = ({ onLoginSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
 
         try {
@@ -32,7 +32,7 @@ export const AdminLogin = ({ onLoginSuccess }) => {
             onLoginSuccess(user);
         } catch (err) {
             console.error('Login error:', err);
-            setError('Invalid email or password. Please try again.');
+            toast.error(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -84,12 +84,6 @@ export const AdminLogin = ({ onLoginSuccess }) => {
                                 disabled={loading}
                             />
                         </div>
-
-                        {error && (
-                            <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
-                                {error}
-                            </div>
-                        )}
 
                         <button
                             type="submit"
