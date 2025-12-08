@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { useSession } from './hooks/useSession';
-import { AdminLogin } from './components/Auth/AdminLogin';
-import { CreateSessionForm } from './components/Auth/CreateSessionForm';
-import { UserJoin } from './components/Auth/UserJoin';
+import { UnifiedLogin } from './components/Auth/UnifiedLogin';
 import { TeacherDashboard } from './components/Teacher/TeacherDashboard';
 import { StudentInterface } from './components/Student/StudentInterface';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
@@ -49,14 +47,8 @@ function AdminDashboardWrapper() {
     const sessionId = userDoc?.sessionId;
     const { session } = useSession(sessionId);
 
-    if (!sessionId) {
-        return (
-            <div className="relative">
-                <DarkModeToggle />
-                <CreateSessionForm onSessionCreated={() => { }} />
-            </div>
-        );
-    }
+    // If no session, dashboard might handle creation or show empty state
+    // But usually admin should be able to create session inside dashboard
 
     return (
         <div className="relative">
@@ -92,8 +84,14 @@ function PublicRoute({ children, restrictedTo = 'all' }) {
         if (userDoc.role === 'admin' && (restrictedTo === 'all' || restrictedTo === 'admin')) {
             return <Navigate to="/admin/dashboard" replace />;
         }
+        // For students, we might want them to stay on the UnifiedLogin page (in 'student_setup' view) 
+        // if they haven't joined a session yet. 
+        // But UnifiedLogin handles that internally.
         if (userDoc.role === 'user' && (restrictedTo === 'all' || restrictedTo === 'user')) {
-            return <Navigate to="/room" replace />;
+            // If they are already in a session, go to room, else stay on login to enter code
+            if (userDoc.sessionId) {
+                return <Navigate to="/room" replace />;
+            }
         }
     }
 
@@ -108,19 +106,15 @@ function App() {
                 <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={
-                        <PublicRoute restrictedTo="user">
-                            <UserJoin onJoinSuccess={() => { }} />
-                        </PublicRoute>
+                        <UnifiedLogin />
                     } />
 
                     <Route path="/admin/login" element={
-                        <PublicRoute restrictedTo="admin">
-                            <AdminLogin onLoginSuccess={() => { }} />
-                        </PublicRoute>
+                        <Navigate to="/" replace />
                     } />
 
                     {/* Admin Protected Routes */}
-                    <Route element={<ProtectedRoute role="admin" redirectPath="/admin/login" />}>
+                    <Route element={<ProtectedRoute role="admin" redirectPath="/" />}>
                         <Route path="/admin/dashboard" element={<AdminDashboardWrapper />} />
                     </Route>
 

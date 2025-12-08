@@ -3,7 +3,9 @@ import { auth, db } from '../firebase';
 import {
     signInAnonymously,
     updateProfile,
-    onAuthStateChanged
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -65,6 +67,12 @@ export const AuthProvider = ({ children }) => {
                         setUserDoc({ id: user.uid, ...userSnapshot.data() });
                         // Set initial activity timestamp on successful load
                         localStorage.setItem('last_active_timestamp', Date.now().toString());
+                    } else {
+                        // For Google Auth, if doc doesn't exist yet, we might need to create it 
+                        // or it might be created by the login function. 
+                        // But onAuthStateChanged fires before login resolves.
+                        // So we might want to set a partial userDoc or handle it in login function.
+                        setUserDoc(null);
                     }
                 } catch (error) {
                     console.error('Error fetching user document:', error);
@@ -183,6 +191,46 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithGoogle = async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            // Check if user doc exists, if not create basic one
+            const userDocRef = doc(db, 'users', user.uid);
+            const userSnapshot = await getDoc(userDocRef);
+
+            if (!userSnapshot.exists()) {
+                // If it's a new user, we don't know if they are admin or student yet
+                // For now, default to user (student), admin functionality is usually manually set in DB 
+                // or checked against a list of admin emails
+                const userData = {
+                    name: user.displayName,
+                    email: user.email,
+                    role: 'user', // Default role
+                    isOnline: true,
+                    lastSeen: serverTimestamp()
+                };
+                await setDoc(userDocRef, userData);
+                setUserDoc({ id: user.uid, ...userData });
+            } else {
+                await updateDoc(userDocRef, {
+                    isOnline: true,
+                    lastSeen: serverTimestamp()
+                });
+                // Ensure local state is updated
+                const data = userSnapshot.data();
+                setUserDoc({ id: user.uid, ...data, isOnline: true });
+            }
+
+            return user;
+        } catch (error) {
+            console.error('Google sign in error:', error);
+            throw error;
+        }
+    };
+
     const updateDisplayName = async (newName) => {
         if (!currentUser) return;
         try {
@@ -209,6 +257,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         loginAnonymous,
+        loginWithGoogle,
         logout,
         updateDisplayName
     };
